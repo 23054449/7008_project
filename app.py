@@ -10,7 +10,7 @@ def run_preprocess(filepath):
     status_text = st.empty()
     status_text.warning("Preprocessing ongoing.")
     try:
-        subprocess.run([".\.venv\Scripts\python.exe", "Preprocessing_7008.py", "--source", filepath], check=True)
+        subprocess.run([".\venv\bin\python.exe", "Preprocessing_7008.py", "--source", filepath], check=True)
         status_text.success("Preprocessing completed successfully!")
     except subprocess.CalledProcessError as e:
         status_text.error(f"Error during preprocessing: {e}")

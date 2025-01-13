@@ -1,0 +1,29 @@
+# HTCondor Preprocessing Submit File
+
+# Specify the executable (Python interpreter or your virtual environment)
+#executable = /venv/bin/python
+executable = preprocessing.sh
+
+# Specify the arguments to pass to the executable
+#arguments = /scripts/preprocessing.py --source /temp/rawData.csv
+
+# Log files for HTCondor to track job output, errors, and events
+output = preprocessing_outputs/job.out
+error = preprocessing_outputs/job.err
+log = preprocessing_outputs/job.log
+
+# Request necessary resources (customize as needed)
+#request_cpus = 1
+#request_memory = 1 GB
+#request_disk = 1 GB
+
+# Set environment variables, if needed
+#environment = "PYTHONPATH=/path/to/your/venv/lib/python3.9/site-packages"
+
+# Transfer files to/from the execution environment (if needed)
+transfer_input_files = /home/ubuntu/7008_project_temp/rawData.csv
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+# Queue the job
+queue

@@ -1,0 +1,28 @@
+# HTCondor DT Training Submit File
+
+# Specify the executable (Python interpreter or your virtual environment)
+executable = /venv/bin/python
+
+# Specify the arguments to pass to the executable
+arguments = /scripts/training.py temp/cleanTrain.csv temp/cleanTest.csv dt
+
+# Log files for HTCondor to track job output, errors, and events
+output = training_outputs/dt.out
+error = training_outputs/dt.err
+log = training_outputs/dt.log
+
+# Request necessary resources (customize as needed)
+#request_cpus = 1
+#request_memory = 1 GB
+#request_disk = 1 GB
+
+# Set environment variables, if needed
+#environment = "PYTHONPATH=/path/to/your/venv/lib/python3.9/site-packages"
+
+# Transfer files to/from the execution environment (if needed)
+#transfer_input_files = /path/to/your/file.txt
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+# Queue the job
+queue

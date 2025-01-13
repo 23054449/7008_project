@@ -119,8 +119,6 @@ def run_preprocess(filepath):
             process_ID = get_job_ID(subprocess.run(["condor_submit", os.path.join('preprocessing.sub')], check=True, text=True, capture_output=True))
             while check_job(process_ID):
                 time.sleep(2)
-        
-        st.session_state.clean_data = pd.read_csv(clean_data_path, index_col=[0])
     except subprocess.CalledProcessError as e:
         status_text.error(f"Error during preprocessing: {e}")
 
@@ -216,6 +214,7 @@ with clean_data_container:
 
             time.sleep(1)
             status_text1.warning("Loading cleaned data.... Please wait.")
+            st.session_state.clean_data = pd.read_csv(clean_data_path, index_col=[0])
             st.write("Here is a preview of the cleaned data:")
             st.dataframe(st.session_state.clean_data.head(100))
             # Display the total number of rows

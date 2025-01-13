@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 import os
 
 parser = argparse.ArgumentParser(description='A tutorial of argparse!')
-parser.add_argument("--source", required=True, type=str, help="Name of the source file")
+parser.add_argument('source', help="Name of the source file")
 args = parser.parse_args()
 
 data_url = args.source

@@ -12,6 +12,6 @@ echo "Current directory: $(pwd)"
  
 # run python script
 echo "Execution start"
-/usr/bin/python3 /scripts/preprocessing.py --source /temp/rawData.csv
+/usr/bin/python3 /home/ubuntu/7008_project/scripts/preprocessing.py /home/ubuntu/7008_project/temp/rawData.csv
 #/usr/bin/python3 test.py
 echo "Execution complete"

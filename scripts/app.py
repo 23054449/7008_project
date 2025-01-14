@@ -113,7 +113,7 @@ def check_job(job_id):
     
 def check_processing_complete():
     try:
-        with open("job.out", "r") as file:
+        with open(os.path.join('preprocessing_outputs', 'job.out'), "r") as file:
             lines = file.readlines()
             if lines:
                 last_line = lines[-1].strip()

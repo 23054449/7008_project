@@ -110,15 +110,31 @@ def check_job(job_id):
         return False
     else:
         return True
+    
+def check_processing_complete():
+    with open("job.out", "r") as file:
+        lines = file.readlines()
+        if lines:
+            last_line = lines[-1].strip()
+            if last_line == "PROCESSING COMPLETE":
+                return False
+            else:
+                return True
+        else:
+            return True
 
 def run_preprocess(filepath):
     try:
         if os.name == "nt":
             subprocess.run([venv_path, preprocessing_path, "--source", filepath], check=True)
         else:
-            process_ID = get_job_ID(subprocess.run(["condor_submit", os.path.join('preprocessing.sub')], check=True, text=True, capture_output=True))
-            while check_job(process_ID):
-                time.sleep(2)
+            # process_ID = get_job_ID(subprocess.run(["condor_submit", os.path.join('preprocessing.sub')], check=True, text=True, capture_output=True))
+            # while check_job(process_ID):
+            #     time.sleep(2)
+            subprocess.run(["condor_submit", os.path.join('preprocessing.sub')], check=True)
+            while check_processing_complete():
+                time.sleep(1)
+                print("HERE")
     except subprocess.CalledProcessError as e:
         status_text.error(f"Error during preprocessing: {e}")
 

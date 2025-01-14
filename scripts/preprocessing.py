@@ -88,3 +88,5 @@ test_df = test_df.reset_index(drop=True)
 combined_df.to_csv(os.path.join('temp', 'cleanData.csv'))
 train_df.to_csv(os.path.join('temp', 'cleanTrain.csv'))
 test_df.to_csv(os.path.join('temp', 'cleanTest.csv'))
+
+print("PROCESSING COMPLETE")

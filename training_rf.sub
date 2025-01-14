@@ -1,10 +1,11 @@
 # HTCondor RF Training Submit File
 
 # Specify the executable (Python interpreter or your virtual environment)
-executable = /venv/bin/python
+#executable = /venv/bin/python
+executable = training_rf.sh
 
 # Specify the arguments to pass to the executable
-arguments = /scripts/training.py temp/cleanTrain.csv temp/cleanTest.csv rf
+#arguments = /scripts/training.py temp/cleanTrain.csv temp/cleanTest.csv rf
 
 # Log files for HTCondor to track job output, errors, and events
 output = training_outputs/rf.out
@@ -12,15 +13,15 @@ error = training_outputs/rf.err
 log = training_outputs/rf.log
 
 # Request necessary resources (customize as needed)
-#request_cpus = 1
-#request_memory = 1 GB
-#request_disk = 1 GB
+request_cpus = 1
+request_memory = 2 GB
+request_disk = 1 GB
 
 # Set environment variables, if needed
 #environment = "PYTHONPATH=/path/to/your/venv/lib/python3.9/site-packages"
 
 # Transfer files to/from the execution environment (if needed)
-#transfer_input_files = /path/to/your/file.txt
+transfer_input_files = /home/ubuntu/7008_project/scripts/training.py, /home/ubuntu/7008_project/temp/cleanTrain.csv, /home/ubuntu/7008_project/temp/cleanTest.csv
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT
 

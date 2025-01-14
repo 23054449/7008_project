@@ -43,9 +43,6 @@ if "LR_run" not in st.session_state:
 if "NB_run" not in st.session_state:
     st.session_state.NB_run = False
 
-# if "table_run" not in st.session_state:
-#     st.session_state.table_run = False
-
 if "status_DT" not in st.session_state:
     st.session_state.status_DT = None
 
@@ -93,31 +90,23 @@ model_paths = {
     'nb': os.path.join("temp", "fraud_detection_nb_model.pkl")
 }
 
+model_name = {
+    'dt': 'Decesion Tree',
+    'knn': 'K Nearest Neighbour',
+    'rf': 'Random Forest',
+    'lr': 'Logistic Regression',
+    'nb': 'Naive Bayes'
+}
+
 models = ['dt', 'knn']#, 'rf', 'lr', 'nb']
 
-def get_job_ID(result):
-    output = result.stdout
-    # Extract the cluster ID (job ID)
-    for line in output.splitlines():
-        if "submitted to cluster" in line:
-            job_id = line.split()[-1].strip(".")  # Get the cluster ID
-            break
-    return job_id
-
-def check_job(job_id):
-    result = subprocess.run(["condor_q", job_id], capture_output=True, text=True)
-    if "completed" in result.stdout.lower():
-        return False
-    else:
-        return True
-    
 def check_processing_complete():
     try:
         with open(os.path.join('preprocessing_outputs', 'job.out'), "r") as file:
             lines = file.readlines()
             if lines:
-                last_line = lines[-1].strip()
-                if last_line == "Execution complete":
+                last_line = lines[-2].strip()
+                if last_line == "PROCESSING COMPLETE":
                     return False
                 else:
                     return True
@@ -133,18 +122,37 @@ def check_processing_complete():
         print(f"An unexpected error occurred: {e}")
         return True
 
+def check_training_complete(model):
+    try:
+        with open(os.path.join('training_outputs', f'{model}.out'), "r") as file:
+            lines = file.readlines()
+            if lines:
+                last_line = lines[-2].strip()
+                if last_line == "TRAINING COMPLETE":
+                    st.session_state[f'{model.upper()}_run'] = True
+                    return False
+                else:
+                    return True
+            else:
+                return True
+    except FileNotFoundError:
+        print(f"Error: The file '{model}.out' was not found.")
+        return True
+    except PermissionError:
+        print(f"Error: Permission denied when accessing '{model}.out'.")
+        return True
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return True
+
 def run_preprocess(filepath):
     try:
         if os.name == "nt":
             subprocess.run([venv_path, preprocessing_path, "--source", filepath], check=True)
         else:
-            # process_ID = get_job_ID(subprocess.run(["condor_submit", os.path.join('preprocessing.sub')], check=True, text=True, capture_output=True))
-            # while check_job(process_ID):
-            #     time.sleep(2)
             subprocess.run(["condor_submit", os.path.join('preprocessing.sub')], check=True)
             while check_processing_complete():
-                time.sleep(1)
-                print("HERE")
+                time.sleep(2)
     except subprocess.CalledProcessError as e:
         status_text.error(f"Error during preprocessing: {e}")
 
@@ -182,21 +190,6 @@ model_container = st.container()
 
 # Create a container for displaying model interface
 download_container = st.container()
-
-# # Create a container for displaying model interface
-# DT_container = st.container()
-
-# # Create a container for displaying model interface
-# KNN_container = st.container()
-
-# # Create a container for displaying model interface
-# RF_container = st.container()
-
-# # Create a container for displaying model interface
-# LR_container = st.container()
-
-# # Create a container for displaying model interface
-# NB_container = st.container()
 
 with ori_data_container:
     if st.session_state.raw_data is not None:
@@ -261,39 +254,11 @@ with clean_data_container:
 def print_line():
     st.markdown("<hr>", unsafe_allow_html=True)
 
-# def build_table():
-#     with DT_container:
-#         print_line()
-#         st.header("Decision Tree")
-#         status_text = st.empty()
-#         status_text.warning("Training model.... Please wait.")
-
-#     with KNN_container:
-#         print_line()
-#         st.header("K Nearest Neighbour")
-#         status_text = st.empty()
-#         status_text.warning("Training model.... Please wait.")
-
-#     with RF_container:
-#         print_line()
-#         st.header("Random Forest")
-#         status_text = st.empty()
-#         status_text.warning("Training model.... Please wait.")
-
-#     with LR_container:
-#         print_line()
-#         st.header("Logistic Regression")
-#         status_text = st.empty()
-#         status_text.warning("Training model.... Please wait.")
-
-#     with NB_container:
-#         print_line()
-#         st.header("Naive Bayes")
-#         status_text = st.empty()
-#         status_text.warning("Training model.... Please wait.")
-
 def run_training(model):
-    return subprocess.run([venv_path, training_path, trainData_path, testData_path, model], capture_output=True, text=True)
+    if os.name == "nt":
+        return subprocess.run([venv_path, training_path, trainData_path, testData_path, model], capture_output=True, text=True)
+    else:
+        subprocess.run(["condor_submit", os.path.join(f'training_{model}.sub')], check=True)
 
 def save_pkl():
     for model, path in model_paths.items():
@@ -301,35 +266,47 @@ def save_pkl():
             st.session_state[f'{model.upper()}_PKL'] = file.read()
 
 def results_print():
-    if st.session_state.DT_run is True:
-        print_line()
-        st.header("Decision Tree")
-        st.code(st.session_state.status_DT.stdout)
-        st.download_button(label="Download Decision Tree Model", data=st.session_state.DT_PKL, file_name="fraud_detection_dt_model.pkl", mime="application/octet-stream")
+    for model, name in model_name.items():
+        if st.session_state[f'{model.upper()}_run'] is True:
+            st.header(name)
+            if os.name == "nt":
+                st.code(st.session_state[f'status_{model.upper()}'].stdout)
+            else:
+                with open(os.path.join('training_results', f'{model}.txt'), "r") as file:
+                    lines = file.readlines()
+                    for line in lines:
+                        st.code(line)
+            st.download_button(label=f"Download {name} Model", data=st.session_state[f'{model.upper()}_PKL'], file_name=f"fraud_detection_{model}_model.pkl", mime="application/octet-stream")
 
-    if st.session_state.KNN_run is True:
-        print_line()
-        st.header("K Nearest Neighbour")
-        st.code(st.session_state.status_DT.stdout)
-        st.download_button(label="Download K Nearest Neighbour Model", data=st.session_state.KNN_PKL, file_name="fraud_detection_knn_model.pkl", mime="application/octet-stream")
+    # if st.session_state.DT_run is True:
+    #     print_line()
+    #     st.header("Decision Tree")
+    #     st.code(st.session_state.status_DT.stdout)
+    #     st.download_button(label="Download Decision Tree Model", data=st.session_state.DT_PKL, file_name="fraud_detection_dt_model.pkl", mime="application/octet-stream")
 
-    if st.session_state.RF_run is True:
-        print_line()
-        st.header("Random Forest")
-        st.code(st.session_state.status_RF.stdout)
-        st.download_button(label="Download Random Forest Model", data=st.session_state.RF_PKL, file_name="fraud_detection_rf_model.pkl", mime="application/octet-stream")
+    # if st.session_state.KNN_run is True:
+    #     print_line()
+    #     st.header("K Nearest Neighbour")
+    #     st.code(st.session_state.status_KNN.stdout)
+    #     st.download_button(label="Download K Nearest Neighbour Model", data=st.session_state.KNN_PKL, file_name="fraud_detection_knn_model.pkl", mime="application/octet-stream")
 
-    if st.session_state.LR_run is True:   
-        print_line()
-        st.header("Logistic Regression")
-        st.code(st.session_state.status_LR.stdout)
-        st.download_button(label="Download Logistic Regression Model", data=st.session_state.LR_PKL, file_name="fraud_detection_lr_model.pkl", mime="application/octet-stream")
+    # if st.session_state.RF_run is True:
+    #     print_line()
+    #     st.header("Random Forest")
+    #     st.code(st.session_state.status_RF.stdout)
+    #     st.download_button(label="Download Random Forest Model", data=st.session_state.RF_PKL, file_name="fraud_detection_rf_model.pkl", mime="application/octet-stream")
 
-    if st.session_state.NB_run is True:
-        print_line()
-        st.header("Naive Bayes")
-        st.code(st.session_state.status_NB.stdout)
-        st.download_button(label="Download Naive Bayes Model", data=st.session_state.NB_PKL, file_name="fraud_detection_nb_model.pkl", mime="application/octet-stream")
+    # if st.session_state.LR_run is True:   
+    #     print_line()
+    #     st.header("Logistic Regression")
+    #     st.code(st.session_state.status_LR.stdout)
+    #     st.download_button(label="Download Logistic Regression Model", data=st.session_state.LR_PKL, file_name="fraud_detection_lr_model.pkl", mime="application/octet-stream")
+
+    # if st.session_state.NB_run is True:
+    #     print_line()
+    #     st.header("Naive Bayes")
+    #     st.code(st.session_state.status_NB.stdout)
+    #     st.download_button(label="Download Naive Bayes Model", data=st.session_state.NB_PKL, file_name="fraud_detection_nb_model.pkl", mime="application/octet-stream")
 
 with model_button_container:
     if st.session_state.clean_data_run is True:
@@ -348,126 +325,16 @@ with model_container:
                 for model in models:
                     st.session_state[f'status_{model.upper()}'] = run_training(model)
                     st.session_state[f'{model.upper()}_run'] = True
-                save_pkl()
-                status_text.success("Training completed successfully!")
-                results_print()
             else:
-                process_ID = get_job_ID(subprocess.run(["condor_submit", os.path.join('preprocessing.sub')], check=True, text=True, capture_output=True))
-                while check_job(process_ID):
+                for model in models:
+                    run_training(model)
+                while (st.session_state.DT_run or st.session_state.KNN_run or st.session_state.RF_run or st.session_state.LR_run or st.session_state.NB_run) is False:
+                    for model in models:
+                        check_training_complete(model)
                     time.sleep(2)
+            save_pkl()
+            status_text.success("Training completed successfully!")
+            results_print()
         else:
             status_text.success("Training completed successfully!")
             results_print()
-
-# if st.session_state.training_run is True:
-#     if st.session_state.table_run is False:
-#         #build_table()
-#         st.session_state.table_run = True
-
-# with DT_container:
-#     if st.session_state.training_run is True:
-#         print_line()
-#         st.header("Decision Tree")
-#         status_text = st.empty()
-#         if st.session_state.DT_run is False:
-#             status_text.warning("Training model.... Please wait.")
-#             st.session_state.status_DT = run_training('dt')
-#             st.session_state.DT_run = True
-#         st.code(st.session_state.status_DT.stdout)
-#         status_text.success("Training completed successfully!")
-
-# with KNN_container:
-#     if st.session_state.training_run is True:
-#         print_line()
-#         st.header("K Nearest Neighbour")
-#         status_text = st.empty()
-#         if st.session_state.KNN_run is False:
-#             status_text.warning("Training model.... Please wait.")
-#             st.session_state.status_KNN = run_training('knn')
-#             st.session_state.KNN_run = True
-#         st.code(st.session_state.status_KNN.stdout)
-#         status_text.success("Training completed successfully!")
-
-# with RF_container:
-#     if st.session_state.training_run is True:
-#         print_line()
-#         st.header("Random Forest")
-#         status_text = st.empty()
-#         if st.session_state.RF_run is False:
-#             status_text.warning("Training model.... Please wait.")
-#             st.session_state.status_RF = run_training('rf')
-#             st.session_state.RF_run = True
-#         st.code(st.session_state.status_RF.stdout)
-#         status_text.success("Training completed successfully!")
-
-# with LR_container:
-#     if st.session_state.training_run is True:
-#         print_line()
-#         st.header("Logistic Regression")
-#         status_text = st.empty()
-#         if st.session_state.LR_run is False:
-#             status_text.warning("Training model.... Please wait.")
-#             st.session_state.status_LR = run_training('lr')
-#             st.session_state.LR_run = True
-#         st.code(st.session_state.status_LR.stdout)
-#         status_text.success("Training completed successfully!")
-
-# with NB_container:
-#     if st.session_state.training_run is True:
-#         print_line()
-#         st.header("Naive Bayes")
-#         status_text = st.empty()
-#         if st.session_state.NB_run is False:
-#             status_text.warning("Training model.... Please wait.")
-#             st.session_state.status_NB = run_training('nb')
-#             st.session_state.NB_run = True
-#         st.code(st.session_state.status_NB.stdout)
-#         status_text.success("Training completed successfully!")
-            
-# def initialize_placeholders():
-#     st.session_state.row_DT = st.empty()
-#     st.session_state.status_DT = st.empty()
-
-#     st.session_state.row_KNN = st.empty()
-#     st.session_state.status_KNN = st.empty()
-
-#     st.session_state.row_RF = st.empty()
-#     st.session_state.status_RF = st.empty()
-
-#     st.session_state.row_LR = st.empty()
-#     st.session_state.status_LR = st.empty()
-
-#     st.session_state.row_NB = st.empty()
-#     st.session_state.status_NB = st.empty()
-
-#     st.session_state.table_run = True
-
-# with model_container:
-#     if st.session_state.training_run is True:
-#         if st.session_state.table_run is False:
-#             initialize_placeholders()
-        
-#         build_table()
-#         st.session_state.row_DT.warning("Training model.... Please wait.")
-#         st.session_state.row_KNN.warning("Training model.... Please wait.")
-#         st.session_state.row_RF.warning("Training model.... Please wait.")
-#         st.session_state.row_LR.warning("Training model.... Please wait.")
-#         st.session_state.row_NB.warning("Training model.... Please wait.")
-
-        # result = run_training('dt')
-        # st.session_state.row_DT.code(result.stdout)
-        # st.session_state.row_DT.success("Training completed successfully!")
-        # st.session_state.DT_run = True
-
-        # with st.session_state.row_KNN:
-        #     result = run_training('knn')
-        #     st.code(result.stdout)
-        #     st.session_state.status_KNN.success("Training completed successfully!")
-
-        # with st.session_state.row_DT:
-        #     if st.session_state.DT_run is True:
-        #         with open(dt_model_path, "rb") as file:
-        #             file_content = file.read()
-        #         st.download_button(label="Download Model", data=file_content, file_name="fraud_detection_dt_model.pkl", mime="application/octet-stream")
-
-

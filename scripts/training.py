@@ -12,14 +12,25 @@ import time
 import pickle
 import os
 
+models = ['dt', 'knn', 'rf', 'lr', 'nb']
+
 def compute_score(y_test, y_predict, model_name):
     tn, fp, fn, tp = confusion_matrix(y_test, y_predict).ravel()
     specificity = tn / (tn + fp)
-    print(f"\n{model_name} Metrics:")
-    print(f"Accuracy: {round(accuracy_score(y_test, y_predict)*100,2)}%")
-    print(f"Recall: {round(recall_score(y_test, y_predict, average='macro')*100,2)}%")
-    print(f"Precision: {round(precision_score(y_test, y_predict, average='macro')*100,2)}%")
-    print(f"Specificity: {round(specificity*100,2)}%")
+    if os.name == "nt":
+        print(f"\n{model_name} Metrics:")
+        print(f"Accuracy: {round(accuracy_score(y_test, y_predict)*100,2)}%")
+        print(f"Recall: {round(recall_score(y_test, y_predict, average='macro')*100,2)}%")
+        print(f"Precision: {round(precision_score(y_test, y_predict, average='macro')*100,2)}%")
+        print(f"Specificity: {round(specificity*100,2)}%")
+    else:
+        for model in models:
+            with open(os.path.join('training_results', f'{model}.txt'), "w") as file:
+                file.write(f"\n{model_name} Metrics:\n")
+                file.write(f"Accuracy: {round(accuracy_score(y_test, y_predict)*100,2)}%\n") 
+                file.write(f"Recall: {round(recall_score(y_test, y_predict, average='macro')*100,2)}%\n") 
+                file.write(f"Precision: {round(precision_score(y_test, y_predict, average='macro')*100,2)}%\n") 
+                file.write(f"Specificity: {round(specificity*100,2)}%\n") 
 
 def show_training_progress(description):
     """Shows a progress bar for the training process"""
@@ -104,7 +115,6 @@ def main():
     args = parser.parse_args()
 
     # Load data
-    # print("\nLoading datasets...")
     try:
         # with tqdm(total=2, desc="Loading Data") as pbar:
         train_df = pd.read_csv(args.train_file)
@@ -121,12 +131,7 @@ def main():
         print(f"Error loading data: {e}")
         return
 
-    # print(f"\nDataset shapes:")
-    # print(f"Training set: {train_df.shape}")
-    # print(f"Test set: {test_df.shape}")
-
     # Prepare data
-    # print("\nPreparing data...")
     X_train = train_df.drop('is_fraud', axis=1)
     Y_train = train_df['is_fraud']
     X_test = test_df.drop('is_fraud', axis=1)
@@ -143,15 +148,15 @@ def main():
 
     try:
         model = model_functions[args.model_type](X_train, Y_train, X_test, Y_test)
-        #print(f"\nModel training completed successfully!")
         
         # Save the model to a pickle file
         model_filename = os.path.join('temp', f"fraud_detection_{args.model_type}_model.pkl")
         with open(model_filename, 'wb') as file:
             pickle.dump(model, file)
-        #print(f"Model saved as: {model_filename}")
     except Exception as e:
         print(f"Error during model training: {e}")
+
+    print("TRAINING COMPLETE")
 
 if __name__ == "__main__":
     main()

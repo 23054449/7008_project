@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-# file name: preprocessing.sh
+# file name: training_lr.sh
 
 # change to directory
 echo "Current directory: $(pwd)"
@@ -9,5 +9,5 @@ echo "Current directory: $(pwd)"
 
 # run python script
 echo "Execution start"
-/usr/bin/python3 /home/ubuntu/7008_project/scripts/preprocessing.py /home/ubuntu/7008_project/temp/rawData.csv
+/usr/bin/python3 /home/ubuntu/7008_project/scripts/training.py /home/ubuntu/7008_project/temp/cleanTrain.csv /home/ubuntu/7008_project/temp/cleanTest.csv lr
 echo "Execution complete"

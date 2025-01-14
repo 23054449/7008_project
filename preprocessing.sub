@@ -13,9 +13,9 @@ error = preprocessing_outputs/job.err
 log = preprocessing_outputs/job.log
 
 # Request necessary resources (customize as needed)
-#request_cpus = 1
-#request_memory = 1 GB
-#request_disk = 1 GB
+request_cpus = 1
+request_memory = 2 GB
+request_disk = 1 GB
 
 # Set environment variables, if needed
 #environment = "PYTHONPATH=/path/to/your/venv/lib/python3.9/site-packages"

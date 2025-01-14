@@ -112,16 +112,26 @@ def check_job(job_id):
         return True
     
 def check_processing_complete():
-    with open("job.out", "r") as file:
-        lines = file.readlines()
-        if lines:
-            last_line = lines[-1].strip()
-            if last_line == "PROCESSING COMPLETE":
-                return False
+    try:
+        with open("job.out", "r") as file:
+            lines = file.readlines()
+            if lines:
+                last_line = lines[-1].strip()
+                if last_line == "Execution complete":
+                    return False
+                else:
+                    return True
             else:
                 return True
-        else:
-            return True
+    except FileNotFoundError:
+        print("Error: The file 'job.out' was not found.")
+        return True
+    except PermissionError:
+        print("Error: Permission denied when accessing 'job.out'.")
+        return True
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return True
 
 def run_preprocess(filepath):
     try:

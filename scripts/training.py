@@ -12,9 +12,7 @@ import time
 import pickle
 import os
 
-models = ['dt', 'knn', 'rf', 'lr', 'nb']
-
-def compute_score(y_test, y_predict, model_name):
+def compute_score(y_test, y_predict, model_name, model):
     tn, fp, fn, tp = confusion_matrix(y_test, y_predict).ravel()
     specificity = tn / (tn + fp)
     if os.name == "nt":
@@ -24,13 +22,12 @@ def compute_score(y_test, y_predict, model_name):
         print(f"Precision: {round(precision_score(y_test, y_predict, average='macro')*100,2)}%")
         print(f"Specificity: {round(specificity*100,2)}%")
     else:
-        for model in models:
-            with open(os.path.join('training_results', f'{model}.txt'), "w") as file:
-                file.write(f"\n{model_name} Metrics:\n")
-                file.write(f"Accuracy: {round(accuracy_score(y_test, y_predict)*100,2)}%\n") 
-                file.write(f"Recall: {round(recall_score(y_test, y_predict, average='macro')*100,2)}%\n") 
-                file.write(f"Precision: {round(precision_score(y_test, y_predict, average='macro')*100,2)}%\n") 
-                file.write(f"Specificity: {round(specificity*100,2)}%\n") 
+        with open(os.path.join('training_results', f'{model}.txt'), "w") as file:
+            file.write(f"\n{model_name} Metrics:\n")
+            file.write(f"Accuracy: {round(accuracy_score(y_test, y_predict)*100,2)}%\n") 
+            file.write(f"Recall: {round(recall_score(y_test, y_predict, average='macro')*100,2)}%\n") 
+            file.write(f"Precision: {round(precision_score(y_test, y_predict, average='macro')*100,2)}%\n") 
+            file.write(f"Specificity: {round(specificity*100,2)}%\n") 
 
 def show_training_progress(description):
     """Shows a progress bar for the training process"""
@@ -50,7 +47,7 @@ def train_decision_tree(x_train, y_train, x_test, y_test):
     
     # print("Making predictions...")
     y_predict = model.predict(x_test)
-    compute_score(y_test, y_predict, "Decision Tree")
+    compute_score(y_test, y_predict, "Decision Tree", "dt")
     return model
 
 def train_knn(x_train, y_train, x_test, y_test):
@@ -63,7 +60,7 @@ def train_knn(x_train, y_train, x_test, y_test):
     
     # print("Making predictions...")
     y_predict = model.predict(x_test)
-    compute_score(y_test, y_predict, "KNN")
+    compute_score(y_test, y_predict, "KNN", "knn")
     return model
 
 def train_random_forest(x_train, y_train, x_test, y_test):
@@ -76,7 +73,7 @@ def train_random_forest(x_train, y_train, x_test, y_test):
     
     # print("Making predictions...")
     y_predict = model.predict(x_test)
-    compute_score(y_test, y_predict, "Random Forest")
+    compute_score(y_test, y_predict, "Random Forest", "rf")
     return model
 
 def train_logistic_regression(x_train, y_train, x_test, y_test):
@@ -89,7 +86,7 @@ def train_logistic_regression(x_train, y_train, x_test, y_test):
     
     # print("Making predictions...")
     y_predict = model.predict(x_test)
-    compute_score(y_test, y_predict, "Logistic Regression")
+    compute_score(y_test, y_predict, "Logistic Regression", "lr")
     return model
 
 def train_naive_bayes(x_train, y_train, x_test, y_test):
@@ -101,7 +98,7 @@ def train_naive_bayes(x_train, y_train, x_test, y_test):
     
     # print("Making predictions...")
     y_predict = model.predict(x_test)
-    compute_score(y_test, y_predict, "Naive Bayes")
+    compute_score(y_test, y_predict, "Naive Bayes", "nb")
     return model
 
 def main():
